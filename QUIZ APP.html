@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyQuizMaster Web Edition</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind for Inter font and custom colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-indigo': '#3F51B5', // Main Color
+                        'accent-cyan': '#00BCD4',   // Accent Color
+                        'error-red': '#F44336',    // Error/Submit
+                        'success-green': '#4CAF50', // Success/Start
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Ensures smooth UI transitions */
+        .transition-colors { transition: all 0.2s ease-in-out; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 min-h-screen p-4 sm:p-8 font-sans antialiased flex justify-center">
+
+    <div id="app" class="w-full max-w-4xl bg-white shadow-xl rounded-xl overflow-hidden flex flex-col min-h-[80vh]">
+
+        <!-- HEADER & METRICS -->
+        <header id="header" class="p-4 sm:p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
+            <div class="flex justify-between items-center mb-2">
+                <div class="text-lg font-bold text-primary-indigo" id="score-display">Score: 0 / 0 Points</div>
+                <button onclick="showSettings(true)" class="text-primary-indigo hover:text-accent-cyan transition-colors text-2xl" aria-label="Settings">
+                    ⚙️
+                </button>
+            </div>
+            <div class="flex justify-between items-center text-sm font-medium text-gray-500">
+                <div id="timer-display">Time: 00m 00s</div>
+                <div id="status-display" class="font-semibold"></div>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
+                <div id="progress-bar" class="bg-accent-cyan h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT AREA -->
+        <main id="main-content" class="flex-grow p-4 sm:p-6 overflow-y-auto">
+            <!-- Content (Settings, Quiz, or Results) will be dynamically inserted here -->
+        </main>
+
+        <!-- FOOTER & CONTROLS -->
+        <footer id="footer" class="p-4 sm:p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+            <button id="review-button" onclick="showReviewModal()" class="px-4 py-2 font-semibold rounded-lg bg-accent-cyan text-white hover:bg-primary-indigo transition-colors shadow-md" style="display: none;">
+                Review
+            </button>
+            <button id="next-button" onclick="checkAndProceed()" class="px-6 py-2 font-bold rounded-lg bg-primary-indigo text-white hover:bg-success-green transition-colors shadow-lg" style="display: none;">
+                Next (Enter)
+            </button>
+        </footer>
+
+    </div>
+
+    <!-- MODAL OVERLAY FOR SETTINGS / REVIEW / MESSAGE -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden items-center justify-center p-4" onclick="closeModalOutside(event)">
+        <div id="modal-content" class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 sm:p-8 transform transition-all duration-300 scale-95 opacity-0">
+            <!-- Modal content goes here -->
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION AND DATA ---
+        const QUIZ_DATA = [
+            // General Knowledge (GK) - 1 point each
+            {"category": "GK", "difficulty": 1, "question": "What is the capital of Japan?", "options": ["Seoul", "Beijing", "Tokyo", "Bangkok"], "answer": "Tokyo"},
+            {"category": "GK", "difficulty": 1, "question": "Who is known as the 'Iron Man of India'?", "options": ["Jawaharlal Nehru", "Sardar Patel", "B.R. Ambedkar", "Subhas Chandra Bose"], "answer": "Sardar Patel"},
+            {"category": "GK", "difficulty": 1, "question": "Which continent is the largest by area?", "options": ["Africa", "Europe", "Asia", "North America"], "answer": "Asia"},
+            {"category": "GK", "difficulty": 1, "question": "The famous rock 'Uluru' is located in which country?", "options": ["Australia", "Canada", "USA", "Brazil"], "answer": "Australia"},
+
+            // Science (Physics, Chemistry, Biology) - 2 points each
+            {"category": "Science", "difficulty": 2, "question": "What is the SI unit of electric current?", "options": ["Volt", "Ohm", "Ampere", "Watt"], "answer": "Ampere"},
+            {"category": "Science", "difficulty": 2, "question": "Which gas is responsible for the greenhouse effect?", "options": ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"], "answer": "Carbon Dioxide"},
+            {"category": "Science", "difficulty": 2, "question": "The power house of the cell is called what?", "options": ["Nucleus", "Ribosome", "Mitochondria", "Cytoplasm"], "answer": "Mitochondria"},
+            {"category": "Science", "difficulty": 2, "question": "What is the pH level of pure water at 25°C?", "options": ["0", "7", "14", "5"], "answer": "7"},
+            {"category": "Science", "difficulty": 2, "question": "Concave mirrors are used in car headlights because they produce a...?", "options": ["Divergent beam", "Parallel beam", "Scattered beam", "Convergent beam"], "answer": "Parallel beam"},
+
+            // Computer Science (CS) - 3 points each
+            {"category": "CS", "difficulty": 3, "question": "Which of these is considered the 'brain' of the computer?", "options": ["RAM", "Monitor", "CPU", "Hard Disk"], "answer": "CPU"},
+            {"category": "CS", "difficulty": 3, "question": "What does the acronym HTML stand for?", "options": ["Hyper Text Markup Language", "High-Tech Machine Learning", "Home Tool Management Link", "Hyperlink and Text Management"], "answer": "Hyper Text Markup Language"},
+            {"category": "CS", "difficulty": 3, "question": "A KiloByte (KB) is equal to how many bytes?", "options": ["1000", "1024", "1048", "100"], "answer": "1024"},
+            {"category": "CS", "difficulty": 3, "question": "Which company developed the Python language?", "options": ["Microsoft", "Google", "Facebook", "Centrum Wiskunde & Informatica (CWI)"], "answer": "Centrum Wiskunde & Informatica (CWI)"},
+            {"category": "CS", "difficulty": 3, "question": "What is a 'bug' in computer science?", "options": ["A type of virus", "An error in a program", "A hardware component", "A coding style"], "answer": "An error in a program"},
+        ];
+
+        const ALL_CATEGORIES = Array.from(new Set(QUIZ_DATA.map(q => q.category)));
+        const MAX_QUESTIONS = QUIZ_DATA.length;
+
+        // Custom category colors for the UI (Tailwind format)
+        const CATEGORY_COLORS = {
+            "GK": "bg-orange-500",
+            "Science": "bg-green-500",
+            "CS": "bg-red-500",
+        };
+
+        // --- 2. STATE MANAGEMENT ---
+        let questions = [];
+        let totalQuestions = 0;
+        let currentQuestionIndex = 0;
+        let userAnswers = {};
+        let isRunning = false;
+        let startTime = 0;
+        let timeElapsed = 0;
+        let timerInterval = null;
+
+        // Config state (initial defaults)
+        let config = {
+            totalQuestions: Math.min(10, MAX_QUESTIONS),
+            categories: [...ALL_CATEGORIES],
+        };
+
+        // History state (loaded from local storage)
+        let resultsHistory = [];
+
+        // --- 3. PERSISTENCE (localStorage) ---
+
+        function loadHistory() {
+            try {
+                const history = localStorage.getItem('pyquizmaster_history');
+                resultsHistory = history ? JSON.parse(history) : [];
+                // Ensure only the last 10 results are kept
+                resultsHistory = resultsHistory.slice(-10);
+            } catch (e) {
+                console.error("Could not load quiz history:", e);
+                resultsHistory = [];
+            }
+        }
+
+        function saveResult(finalScore, maxScore, timeTakenSeconds) {
+            const minutes = Math.floor(timeTakenSeconds / 60);
+            const seconds = timeTakenSeconds % 60;
+            const newResult = {
+                timestamp: new Date().toLocaleString(),
+                score: finalScore,
+                max_score: maxScore,
+                time_taken: `${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`
+            };
+
+            resultsHistory.push(newResult);
+            resultsHistory = resultsHistory.slice(-10); // Keep only the last 10
+
+            try {
+                localStorage.setItem('pyquizmaster_history', JSON.stringify(resultsHistory));
+            } catch (e) {
+                console.error("Could not save quiz history:", e);
+            }
+        }
+
+        // --- 4. CORE LOGIC ---
+
+        function updateTimer() {
+            if (isRunning) {
+                timeElapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(timeElapsed / 60);
+                const seconds = timeElapsed % 60;
+                document.getElementById('timer-display').textContent = `Time: ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+            }
+        }
+
+        function calculateScore(qList, answers) {
+            let finalScore = 0;
+            let maxScore = 0;
+            let correctByCategory = {};
+            let totalByCategory = {};
+
+            // Initialize categories
+            ALL_CATEGORIES.forEach(cat => {
+                correctByCategory[cat] = 0;
+                totalByCategory[cat] = 0;
+            });
+
+            qList.forEach((q_data, i) => {
+                const category = q_data.category;
+                const difficulty = q_data.difficulty;
+                const selected = answers[i];
+
+                totalByCategory[category] = (totalByCategory[category] || 0) + 1;
+                maxScore += difficulty;
+
+                if (selected === q_data.answer) {
+                    finalScore += difficulty;
+                    correctByCategory[category] = (correctByCategory[category] || 0) + 1;
+                }
+            });
+
+            return { finalScore, maxScore, correctByCategory, totalByCategory };
+        }
+
+        function updateScoreDisplay() {
+            const { finalScore, maxScore } = calculateScore(questions, userAnswers);
+            document.getElementById('score-display').textContent = `Score: ${finalScore} / ${maxScore} Points`;
+        }
+
+        function applySettingsAndStart() {
+            const qCount = parseInt(document.getElementById('q-slider').value);
+            const selectedCategories = ALL_CATEGORIES.filter(cat =>
+                document.getElementById(`cat-${cat}`).checked
+            );
+
+            if (selectedCategories.length === 0) {
+                showMessage("Selection Error", "Please select at least one category to start the quiz.");
+                return;
+            }
+
+            // Update configuration
+            config.totalQuestions = qCount;
+            config.categories = selectedCategories;
+
+            // Filter questions
+            let filteredQuestions = QUIZ_DATA.filter(q => selectedCategories.includes(q.category));
+
+            // Adjust count if not enough questions are available
+            if (filteredQuestions.length < qCount) {
+                config.totalQuestions = filteredQuestions.length;
+            }
+
+            // Shuffle and select
+            filteredQuestions.sort(() => Math.random() - 0.5);
+            questions = filteredQuestions.slice(0, config.totalQuestions);
+            totalQuestions = questions.length;
+
+            // Reset state
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            startTime = Date.now();
+            timeElapsed = 0;
+            isRunning = true;
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+
+            closeModal();
+            renderQuestion();
+            document.getElementById('review-button').style.display = 'inline-block';
+            document.getElementById('next-button').style.display = 'inline-block';
+        }
+
+        function renderQuestion() {
+            if (currentQuestionIndex >= totalQuestions) {
+                showResults();
+                return;
+            }
+
+            const qData = questions[currentQuestionIndex];
+            const qNum = currentQuestionIndex + 1;
+            const isLastQ = qNum === totalQuestions;
+            const currentAnswer = userAnswers[currentQuestionIndex] || "";
+
+            // Update Header Metrics
+            document.getElementById('status-display').textContent = `Question ${qNum} of ${totalQuestions}`;
+            document.getElementById('progress-bar').style.width = `${(qNum - 1) / totalQuestions * 100}%`;
+            document.getElementById('next-button').textContent = isLastQ ? "Submit & View Results (Enter)" : "Next Question (Enter)";
+            document.getElementById('next-button').classList.toggle('bg-error-red', isLastQ);
+            document.getElementById('next-button').classList.toggle('bg-primary-indigo', !isLastQ);
+
+            // Question Content
+            const categoryColor = CATEGORY_COLORS[qData.category] || 'bg-blue-500';
+            const contentHTML = `
+                <div class="mb-6">
+                    <span class="inline-block px-3 py-1 text-xs font-semibold text-white rounded-full ${categoryColor}">
+                        CATEGORY: ${qData.category.toUpperCase()}
+                    </span>
+                    <span class="ml-4 text-sm font-medium text-gray-600">
+                        (${qData.difficulty} points)
+                    </span>
+                </div>
+                <h2 class="text-2xl font-bold mb-8 leading-relaxed text-gray-800">
+                    Q${qNum}: ${qData.question}
+                </h2>
+                <div id="options-container">
+                    ${qData.options.map((option, index) => `
+                        <label
+                            class="block p-4 mb-4 border-2 ${option === currentAnswer ? 'border-primary-indigo bg-indigo-50 shadow-md' : 'border-gray-300 hover:border-accent-cyan hover:bg-cyan-50'} rounded-xl cursor-pointer transition-colors"
+                            data-option="${option}"
+                            tabindex="0"
+                            onkeydown="handleOptionKey(event, '${option}')"
+                        >
+                            <input
+                                type="radio"
+                                name="q${qNum}"
+                                value="${option}"
+                                class="hidden"
+                                onclick="selectOption('${option}', ${currentQuestionIndex})"
+                                ${option === currentAnswer ? 'checked' : ''}
+                            >
+                            <span class="font-semibold text-gray-700 select-none">
+                                (${index + 1})
+                            </span>
+                            <span class="ml-2 text-lg text-gray-900 select-none">
+                                ${option}
+                            </span>
+                        </label>
+                    `).join('')}
+                </div>
+                <div id="feedback-message" class="mt-6 text-center font-bold text-lg h-6"></div>
+            `;
+
+            document.getElementById('main-content').innerHTML = contentHTML;
+            updateScoreDisplay();
+        }
+
+        function selectOption(selectedOption, qIndex) {
+            userAnswers[qIndex] = selectedOption;
+            updateScoreDisplay(); // Update score display immediately on selection
+
+            // Update visual state of radio buttons
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.querySelectorAll('label').forEach(label => {
+                const optionValue = label.getAttribute('data-option');
+                if (optionValue === selectedOption) {
+                    label.classList.add('border-primary-indigo', 'bg-indigo-50', 'shadow-md');
+                    label.classList.remove('border-gray-300', 'hover:border-accent-cyan', 'hover:bg-cyan-50');
+                } else {
+                    label.classList.remove('border-primary-indigo', 'bg-indigo-50', 'shadow-md');
+                    label.classList.add('border-gray-300', 'hover:border-accent-cyan', 'hover:bg-cyan-50');
+                }
+            });
+        }
+
+        function checkAndProceed() {
+            if (!isRunning) return;
+
+            const qData = questions[currentQuestionIndex];
+            const selected = userAnswers[currentQuestionIndex];
+            const feedbackEl = document.getElementById('feedback-message');
+            const optionsContainer = document.getElementById('options-container');
+
+            // --- 1. Validation and Confirmation ---
+            if (!selected) {
+                const isLastQ = currentQuestionIndex === totalQuestions - 1;
+                const confirmation = isLastQ ?
+                    confirmMessage("Confirm Submission", "You haven't answered this question. Submit the quiz anyway?") :
+                    confirmMessage("Confirm Skip", "You haven't answered this question. Skip and proceed to the next one?");
+
+                if (!confirmation) {
+                    return; // User cancelled
+                }
+            }
+
+            // --- 2. Disable Controls and Show Feedback ---
+            document.getElementById('next-button').disabled = true;
+            document.getElementById('review-button').disabled = true;
+            optionsContainer.querySelectorAll('input').forEach(input => input.disabled = true);
+
+            let feedbackText = "";
+            let feedbackColor = "";
+
+            optionsContainer.querySelectorAll('label').forEach(label => {
+                const optionValue = label.getAttribute('data-option');
+                label.classList.remove('hover:border-accent-cyan', 'hover:bg-cyan-50');
+
+                if (optionValue === qData.answer) {
+                    // Correct Answer
+                    label.classList.add('border-success-green', 'bg-green-100', 'shadow-lg');
+                } else if (optionValue === selected && selected !== qData.answer) {
+                    // Incorrect Selected Answer
+                    label.classList.add('border-error-red', 'bg-red-100', 'shadow-lg');
+                }
+            });
+
+            if (selected === qData.answer) {
+                feedbackText = `✅ Correct! Earned ${qData.difficulty} points.`;
+                feedbackColor = 'text-success-green';
+            } else if (selected) {
+                feedbackText = `❌ Incorrect. Correct answer was: ${qData.answer}`;
+                feedbackColor = 'text-error-red';
+            } else {
+                feedbackText = "⚠️ Skipped. No points awarded.";
+                feedbackColor = 'text-yellow-600';
+            }
+
+            feedbackEl.textContent = feedbackText;
+            feedbackEl.className = `mt-6 text-center font-bold text-lg h-6 ${feedbackColor}`;
+
+            // --- 3. Delay and Proceed ---
+            setTimeout(() => {
+                document.getElementById('next-button').disabled = false;
+                document.getElementById('review-button').disabled = false;
+                currentQuestionIndex++;
+                if (currentQuestionIndex < totalQuestions) {
+                    renderQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1500); // Wait 1.5 seconds for user to see the feedback
+        }
+
+        // --- 5. RESULT AND UTILITY SCREENS ---
+
+        function showResults() {
+            isRunning = false;
+            clearInterval(timerInterval);
+
+            const { finalScore, maxScore, correctByCategory, totalByCategory } = calculateScore(questions, userAnswers);
+            saveResult(finalScore, maxScore, timeElapsed);
+
+            // Update header
+            document.getElementById('score-display').textContent = `FINAL SCORE: ${finalScore} / ${maxScore}`;
+            document.getElementById('timer-display').textContent = `Time Taken: ${document.getElementById('timer-display').textContent.split(': ')[1]}`;
+            document.getElementById('status-display').textContent = "QUIZ COMPLETE";
+            document.getElementById('progress-bar').style.width = `100%`;
+            document.getElementById('next-button').style.display = 'none';
+            document.getElementById('review-button').style.display = 'none';
+
+            // Category Breakdown
+            const breakdownHTML = ALL_CATEGORIES.map(category => {
+                const total = totalByCategory[category] || 0;
+                const correct = correctByCategory[category] || 0;
+                if (total === 0) return '';
+                const colorClass = CATEGORY_COLORS[category].replace('bg-', 'text-'); // Convert bg to text color
+                return `<p class="text-lg font-medium ${colorClass}">• ${category}: ${correct} / ${total} Correct</p>`;
+            }).join('');
+
+            // Mistakes Review
+            const incorrectQuestions = questions.map((q, i) => ({
+                ...q,
+                number: i + 1,
+                userAnswer: userAnswers[i] || "N/A (Skipped)",
+            })).filter(q => q.userAnswer !== q.answer);
+
+            const mistakesHTML = incorrectQuestions.length > 0 ? `
+                <h3 class="text-2xl font-bold text-error-red mt-8 mb-4 border-b pb-2">Mistakes Review</h3>
+                ${incorrectQuestions.map(item => `
+                    <div class="bg-gray-100 p-4 rounded-lg shadow-sm mb-4">
+                        <p class="font-semibold text-lg text-gray-800">Q${item.number} (${item.category} - ${item.difficulty}pts): ${item.question}</p>
+                        <p class="mt-1 text-error-red font-medium">Your Answer: ${item.userAnswer}</p>
+                        <p class="text-success-green font-medium">Correct Answer: ${item.answer}</p>
+                    </div>
+                `).join('')}
+            ` : `<p class="text-lg text-success-green font-semibold mt-6">🎉 Perfect Score! No mistakes to review.</p>`;
+
+            // History Table
+            const historyHTML = resultsHistory.slice().reverse().map(result => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-3 text-sm text-gray-600">${result.timestamp.split(', ')[0]}</td>
+                    <td class="p-3 text-sm font-semibold">${result.score}/${result.max_score}</td>
+                    <td class="p-3 text-sm">${result.time_taken}</td>
+                </tr>
+            `).join('');
+
+
+            // Main Results Content
+            const resultsHTML = `
+                <div class="p-4 sm:p-8 text-center">
+                    <h1 class="text-4xl font-extrabold text-primary-indigo mb-2">Quiz Complete!</h1>
+                    <p class="text-xl font-semibold mb-8 text-gray-700">You scored <span class="text-5xl font-extrabold ${finalScore > maxScore * 0.7 ? 'text-success-green' : 'text-error-red'}">${finalScore}</span> out of ${maxScore} points!</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-6 bg-indigo-50 rounded-xl shadow-inner">
+                            <h3 class="text-xl font-bold text-primary-indigo mb-4">Category Breakdown</h3>
+                            ${breakdownHTML}
+                        </div>
+                        <div class="p-6 bg-gray-50 rounded-xl shadow-inner">
+                            <h3 class="text-xl font-bold text-primary-indigo mb-4">Performance History</h3>
+                            <table class="w-full text-left table-auto">
+                                <thead class="border-b-2 border-primary-indigo">
+                                    <tr class="text-primary-indigo font-bold">
+                                        <th class="p-3">Date</th>
+                                        <th class="p-3">Score</th>
+                                        <th class="p-3">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${historyHTML}
+                                </tbody>
+                            </table>
+                            ${resultsHistory.length === 0 ? '<p class="text-gray-500 mt-4">No past results found.</p>' : ''}
+                        </div>
+                    </div>
+
+                    ${mistakesHTML}
+
+                    <button onclick="showSettings(true)" class="mt-10 px-8 py-3 text-xl font-bold rounded-lg bg-success-green text-white hover:bg-primary-indigo transition-colors shadow-lg">
+                        START NEW QUIZ
+                    </button>
+                </div>
+            `;
+            document.getElementById('main-content').innerHTML = resultsHTML;
+        }
+
+        function showMessage(title, message) {
+            const modal = document.getElementById('modal-content');
+            modal.innerHTML = `
+                <h2 class="text-2xl font-bold text-primary-indigo mb-4">${title}</h2>
+                <p class="text-gray-700 mb-6">${message}</p>
+                <button onclick="closeModal()" class="w-full py-2 bg-primary-indigo text-white font-semibold rounded-lg hover:bg-accent-cyan">
+                    OK
+                </button>
+            `;
+            showModal();
+        }
+
+        function confirmMessage(title, message) {
+            // This is a browser function used as a placeholder for a custom modal confirmation
+            // In a full web app, you'd use a custom modal promise, but per requirements, this replaces tkinter's messagebox.
+            return window.confirm(message);
+        }
+
+        // --- MODAL CONTROLS ---
+
+        function showModal() {
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            setTimeout(() => {
+                content.classList.remove('opacity-0', 'scale-95');
+                content.classList.add('opacity-100', 'scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            content.classList.remove('opacity-100', 'scale-100');
+            content.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                overlay.classList.remove('flex');
+                overlay.classList.add('hidden');
+                content.innerHTML = ''; // Clear content
+            }, 300);
+        }
+
+        function closeModalOutside(event) {
+            if (event.target === document.getElementById('modal-overlay')) {
+                closeModal();
+            }
+        }
+
+        function showSettings(isFromButton = false) {
+            if (isRunning && isFromButton) {
+                if (!confirmMessage("Confirmation", "Are you sure you want to stop the current quiz and start a new one?")) {
+                    return;
+                }
+                clearInterval(timerInterval);
+            }
+
+            const availableQuestions = QUIZ_DATA.length;
+
+            const modal = document.getElementById('modal-content');
+            modal.innerHTML = `
+                <h2 class="text-3xl font-bold text-primary-indigo mb-6">Quiz Configuration</h2>
+
+                <!-- Total Questions Slider -->
+                <div class="mb-8 p-4 bg-indigo-50 rounded-lg">
+                    <p class="text-lg font-semibold mb-2">Number of Questions:</p>
+                    <p id="q-slider-label" class="text-2xl font-bold text-accent-cyan mb-4">${config.totalQuestions} / ${availableQuestions}</p>
+                    <input type="range" id="q-slider" min="5" max="${availableQuestions}" value="${config.totalQuestions}" step="1"
+                           oninput="document.getElementById('q-slider-label').textContent = this.value + ' / ${availableQuestions}'"
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                </div>
+
+                <!-- Category Filters -->
+                <div class="mb-8 p-4 bg-gray-50 rounded-lg">
+                    <p class="text-lg font-semibold mb-4">Select Categories (Weighted Scoring):</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        ${ALL_CATEGORIES.map(cat => `
+                            <label class="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-200 transition-colors">
+                                <input type="checkbox" id="cat-${cat}" value="${cat}" ${config.categories.includes(cat) ? 'checked' : ''}
+                                       class="form-checkbox h-5 w-5 ${CATEGORY_COLORS[cat].replace('bg-', 'text-')}"
+                                       style="accent-color: ${CATEGORY_COLORS[cat].split('-')[1]}">
+                                <span class="font-medium">${cat} (${QUIZ_DATA.find(q => q.category === cat).difficulty} pts)</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <button onclick="applySettingsAndStart()" class="w-full py-3 text-xl font-bold rounded-lg bg-success-green text-white hover:bg-primary-indigo transition-colors shadow-lg">
+                    START QUIZ
+                </button>
+            `;
+            showModal();
+        }
+
+        function showReviewModal() {
+            const modal = document.getElementById('modal-content');
+
+            const qButtonsHTML = questions.map((q, i) => {
+                const qNum = i + 1;
+                const answered = userAnswers[i] ? true : false;
+                const isCurrent = i === currentQuestionIndex;
+
+                let btnClass = 'bg-gray-200 text-gray-800';
+                let statusText = '❓ Unanswered';
+
+                if (isCurrent) {
+                    btnClass = 'bg-primary-indigo text-white font-bold shadow-md';
+                    statusText = '➡️ CURRENT QUESTION';
+                } else if (answered) {
+                    btnClass = 'bg-success-green text-white';
+                    statusText = '✅ Answered';
+                }
+
+                return `
+                    <button onclick="jumpToQuestion(${i})" class="w-full text-left p-3 mb-2 rounded-lg ${btnClass} hover:opacity-80 transition-opacity">
+                        <span class="font-bold">Q${qNum}</span> | ${q.category} (${q.difficulty}pts) | ${statusText}
+                    </button>
+                `;
+            }).join('');
+
+            modal.innerHTML = `
+                <h2 class="text-3xl font-bold text-primary-indigo mb-4">Quiz Review & Jump</h2>
+                <div class="max-h-96 overflow-y-auto p-2 border rounded-lg mb-6">
+                    ${qButtonsHTML}
+                </div>
+                <button onclick="closeModal()" class="w-full py-2 bg-error-red text-white font-semibold rounded-lg hover:bg-primary-indigo">
+                    Close Review
+                </button>
+            `;
+            showModal();
+        }
+
+        function jumpToQuestion(index) {
+            closeModal();
+            currentQuestionIndex = index;
+            renderQuestion();
+        }
+
+
+        // --- KEYBOARD BINDINGS ---
+        window.addEventListener('keydown', (e) => {
+            if (!isRunning) return;
+
+            // 1-4 key presses for options
+            if (e.key >= '1' && e.key <= '4') {
+                const optionIndex = parseInt(e.key) - 1;
+                const qData = questions[currentQuestionIndex];
+
+                if (optionIndex < qData.options.length) {
+                    selectOption(qData.options[optionIndex], currentQuestionIndex);
+                }
+            }
+
+            // Enter key to proceed
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent default form submission or button click
+                document.getElementById('next-button').click();
+            }
+        });
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            loadHistory();
+            showSettings();
+        };
+
+    </script>
+</body>
+</html>
