@@ -1,112 +1,66 @@
-# PyQuizMaster-The-Weighted-Learning-Engine
-The desktop quiz app built to challenge and track serious learners.
+# 🧠 PyQuizMaster: The Weighted Learning Engine
 
-⚡ Project Overview
+**A dual-platform (Desktop & Web) diagnostic quiz system designed for serious learners and intellectual performance tracking.**
 
-PyQuizMaster is a desktop-grade quiz application built with Python and customtkinter for a sleek, responsive UI. It moves beyond standard tests by featuring a powerful weighted scoring engine: hard questions (CS) are worth more points than easy ones (GK).
+PyQuizMaster moves beyond standard testing by implementing a powerful **Weighted Scoring Engine**, where question difficulty directly impacts point value (e.g., CS questions are worth more than GK), providing a true measure of specialized knowledge.
 
-It’s a true diagnostic tool, offering:
+---
 
-Persistent History: Tracks and saves your last 10 performance sessions locally.
+## ✨ Key Differentiators & Features
 
-Real-Time Metrics: Progress bar, live timer, and instant score updates.
+| Feature Category | Desktop Edition (Python/customtkinter) | Web Edition (HTML/JS/Tailwind CSS) | **Strategic Value** |
+| :--- | :--- | :--- | :--- |
+| **Scoring Engine** | **Weighted Scoring** based on category/difficulty. | **Weighted Scoring** (1, 2, or 3 points) based on category. | Provides a **diagnostic, weighted score** over a simple count of correct answers. |
+| **UI/UX** | Desktop-grade UI with `customtkinter`. Fully responsive and compiled for a native feel. | Clean, **responsive design** using **Tailwind CSS**. Looks great on all devices (desktop/mobile). | Ensures an optimal learning experience regardless of the user's platform. |
+| **Tracking** | **Persistent History** tracks and saves your last **10 sessions** locally. | **Local Storage History** saves up to the last **10 results** in the browser. | Allows users to track performance trends and identify knowledge gaps over time. |
+| **Workflow** | **Rapid Hotkeys** (1-4, Enter) for instant answer selection and navigation. | **Hotkeys** (1-4, Enter) for highly efficient, keyboard-driven quizzes. | Maximizes focus and minimizes time spent on navigation. |
+| **Post-Quiz Analysis** | Comprehensive post-quiz analysis and **mistake breakdown**. | Detailed **Mistakes Review** and a **Category Breakdown** of performance. | Facilitates targeted study by clearly isolating areas requiring improvement. |
+| **Configuration** | Dedicated **Settings Window** for question count and category filtering (GK, Science, CS). | **Custom Quiz Configuration** via an intuitive slider and category checkboxes. | Enables highly personalized and focused study sessions. |
 
-Rapid Workflow: Full support for keyboard shortcuts (1-4, Enter).
+---
 
-Detailed Review: Comprehensive post-quiz analysis and mistake breakdown.
+## 🛠️ Technical Stack
 
-This is not just a quiz—it's an advanced system for intellectual performance tracking.
+| Component | Desktop Edition | Web Edition |
+| :--- | :--- | :--- |
+| **Core Language** | **Python 3.8+** | **HTML5, JavaScript (Zero Dependencies)** |
+| **UI Framework** | `customtkinter` (for modern desktop UI) | **Tailwind CSS** (via CDN for utility-first styling) |
+| **Workflow** | Object-Oriented Programming (OOP) | Single-file application architecture |
+| **Dependencies** | `pip install customtkinter` | None (relies on unpkg CDN links) |
 
-🚀 Get Started
+---
 
-Prerequisites
+## 🚀 Setup & Execution
 
-# Requires Python 3.8+
-pip install customtkinter
+### 💻 Desktop Edition (`QUIZ APP.py`)
 
+1.  **Prerequisite:** Ensure Python 3.8+ is installed.
+2.  **Install UI Library:**
+    ```bash
+    pip install customtkinter
+    ```
+3.  **Run:** Execute the main application file.
+    ```bash
+    python "QUIZ APP.py"
+    ```
 
-Run the App
+### 🌐 Web Edition (`index.html`)
 
-Clone the repository and cd into the directory.
+1.  **Setup:** Copy the entire code block and save it as an **`index.html`** file.
+2.  **Run:** Simply double-click the saved file to open it in any modern web browser.
 
-Execute the main file:
+---
 
-QUIZ APP.py
+## 🕹️ Usage Workflow
 
+1.  **Configure:** Use the initial settings screen to select your desired **Number of Questions** and target **Categories** (GK, Science, CS).
+2.  **Quiz:** Take the quiz using either clicks or **Hotkeys (1, 2, 3, 4, Enter)**. Utilize the **Review** feature to jump between questions.
+3.  **Analyze:** Upon submitting, view the **Results Screen** showing your Weighted Score, Category Breakdown, and the historical record of your last 10 sessions.
 
-Use the Settings Window to customize your question count and filter by categories (GK, Science, CS) before starting.
+---
 
-⚖️ License & Author
+## ⚖️ License & Author
 
-This project is open-sourced under the MIT License.
+This project is open-sourced under the **MIT License**.
 
-Creator: @ankitscse27
-
-###PyQuizMaster Web Edition
-A clean, responsive, single-file HTML/JavaScript quiz application with a scoring system, timer, and question filtering, built using Tailwind CSS.
-
-✨ Features
-Responsive Design: Looks great on both desktop and mobile devices.
-
-Weighted Scoring: Questions are assigned different point values (1, 2, or 3 points) based on difficulty/category.
-
-Custom Quiz Configuration:
-
-Select the number of questions.
-
-Filter questions by category (GK, Science, CS).
-
-Progress Tracking: Includes a real-time score display, a progress bar, and a timer.
-
-Review Mode: A modal allows users to check which questions they've answered and jump to any question.
-
-Local Storage History: Saves up to the last 10 quiz results locally on the user's browser.
-
-Hotkeys: Use number keys (1, 2, 3, 4) to select options and Enter to proceed.
-
-Zero Dependencies: Everything is contained in a single HTML file, powered by unpkg CDN links for Tailwind CSS and the Inter font.
-
-🚀 Setup & Installation
-Since this is a single-file application, there is no complex installation process.
-
-Save the Code: Copy the entire block of code and save it as an HTML file (e.g., index.html).
-
-Open in Browser: Double-click the saved index.html file to open it in any web browser (Chrome, Firefox, Edge, etc.).
-
-That's it! The quiz will load and present you with the configuration screen.
-
-🕹️ How to Use
-1. Configuration (Start Screen)
-When you first open the app or click the ⚙️ (Settings) button:
-
-Number of Questions: Use the slider to choose how many questions you want for your quiz (up to the total available).
-
-Select Categories: Check the boxes for the topics you want included. The point value for questions in each category is shown next to its name.
-
-Click START QUIZ to begin.
-
-2. Taking the Quiz
-Select an Answer: Click or tap an option to select it. You can change your mind before pressing "Next."
-
-Hotkeys:
-
-Press keys 1, 2, 3, or 4 to instantly select the corresponding option.
-
-Press Enter to proceed to the next question (or submit the quiz on the last question).
-
-Review: Click the Review button to see a list of all questions, their status (Answered/Unanswered/Current), and jump to a specific question.
-
-Submit: The last question's button will change to Submit & View Results (Enter).
-
-3. Results
-After submitting the quiz, the results screen will show:
-
-Your Final Score and the maximum possible score.
-
-A Category Breakdown of your performance.
-
-A Mistakes Review detailing all the questions you answered incorrectly or skipped, along with the correct answers.
-
-Your Performance History of recent scores saved locally.
-
-Creator: @ankitscse27
+**Creator:** [@ankitscse27](https://github.com/ankitscse27)
